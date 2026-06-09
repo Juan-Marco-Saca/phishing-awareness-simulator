@@ -138,4 +138,4 @@ No passwords or sensitive credentials are collected. The simulator is designed t
 Juan Marco Saca
 
 Cybersecurity Course Project
-University of Texas at Brownsville
+Tomas Bata University (Exchange program with St. Mary's University)
