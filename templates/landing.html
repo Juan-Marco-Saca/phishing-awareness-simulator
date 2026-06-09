@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Uh Oh...</title>
+
+    <style>
+        body{
+            background:#111;
+            color:white;
+            font-family:Arial, sans-serif;
+            text-align:center;
+            padding-top:100px;
+        }
+
+        .big{
+            font-size:48px;
+            color:red;
+            font-weight:bold;
+        }
+
+        .warning{
+            font-size:24px;
+            margin-top:30px;
+        }
+
+        .reveal{
+            display:none;
+            background:white;
+            color:black;
+            max-width:800px;
+            margin:50px auto;
+            padding:30px;
+            border-radius:10px;
+        }
+
+        button{
+            background:#0078d4;
+            color:white;
+            border:none;
+            padding:15px 25px;
+            border-radius:5px;
+            cursor:pointer;
+            font-size:18px;
+        }
+
+        ul{
+            text-align:left;
+            display:inline-block;
+        }
+    </style>
+
+    <script>
+        setTimeout(function() {
+            document.getElementById("panic").style.display = "none";
+            document.getElementById("reveal").style.display = "block";
+        }, 4000);
+    </script>
+
+</head>
+
+<body>
+
+<div id="panic">
+
+    <div class="big">
+        🚨 ACCOUNT COMPROMISED 🚨
+    </div>
+
+    <div class="warning">
+        Downloading browser history...
+    </div>
+
+    <br>
+
+    <div class="warning">
+        Sending embarrassing search history to professors...
+    </div>
+
+    <br>
+
+    <div class="warning">
+        Contacting your mom...
+    </div>
+
+</div>
+
+<div id="reveal" class="reveal">
+
+    <h1>🎣 Relax. You Got Phished.</h1>
+
+    <h2>This was a cybersecurity awareness exercise.</h2>
+
+    <p>
+        No passwords were collected.
+        No data was stolen.
+        Your browser history is safe.
+        Your mom has not been contacted.
+    </p>
+
+    <h3>Why did this work?</h3>
+
+    <ul>
+        <li>Curiosity</li>
+        <li>Urgency</li>
+        <li>Trust in official-looking emails</li>
+        <li>Clicking before verifying</li>
+    </ul>
+
+    <br><br>
+
+    <button onclick="window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ','_blank')">
+        Claim Your Free Cybersecurity Prize 🎁
+    </button>
+
+    <br><br>
+
+    <button onclick="window.location.href='/training?email={{ email }}'">
+        Fine... I'll Do The Training
+    </button>
+
+</div>
+
+</body>
+</html>

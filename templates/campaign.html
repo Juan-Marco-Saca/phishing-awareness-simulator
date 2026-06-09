@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Phishing Simulation</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 40px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            max-width: 850px;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,.15);
+        }
+
+        h1 {
+            color: #1565c0;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-top: 20px;
+        }
+
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 180px;
+        }
+
+        button {
+            margin-top: 25px;
+            background: #1565c0;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0d47a1;
+        }
+
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 5px solid #ff9800;
+            margin-bottom: 20px;
+        }
+
+        .preview {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 25px;
+            border-radius: 8px;
+        }
+
+        .preview h3 {
+            margin-top: 0;
+            color: #1565c0;
+        }
+
+        .email-box {
+            background: white;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            white-space: pre-line;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            color: #1565c0;
+            text-decoration: none;
+        }
+
+        .small-note {
+            font-size: 14px;
+            color: #555;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Create Phishing Simulation</h1>
+
+    <div class="warning">
+        <strong>Authorized training only:</strong>
+        This simulator should only be used for your cybersecurity class project or approved awareness testing.
+        It does not collect passwords or sensitive information.
+    </div>
+
+    <form method="POST">
+
+        <label>Select Campaign Template</label>
+
+        <select name="template" id="template" required onchange="updatePreview()">
+            <option value="password">🔐 Password Expiration Notice</option>
+            <option value="parking">🚗 Parking Permit Update Required</option>
+            <option value="package">📦 Package Delivery Notice</option>
+            <option value="payroll">💰 Direct Deposit Verification Needed</option>
+            <option value="storage">☁️ OneDrive Storage Limit Warning</option>
+        </select>
+
+        <div class="preview">
+            <h3>Email Preview</h3>
+
+            <p><strong>Subject:</strong> <span id="preview-subject"></span></p>
+
+            <div class="email-box" id="preview-body"></div>
+        </div>
+
+        <label>Target Emails</label>
+        <p class="small-note">Enter one email per line.</p>
+
+        <textarea 
+            name="targets" 
+            placeholder="student1@example.com&#10;student2@example.com&#10;student3@example.com" 
+            required></textarea>
+
+        <button type="submit">Send Simulation</button>
+
+    </form>
+
+    <a href="/">← Back to Dashboard</a>
+
+</div>
+
+<script>
+    const templates = {
+        password: {
+            subject: "Action Required: Account Password Expiring Soon",
+            body: `Hello,
+
+Our system shows that your university account password is scheduled to expire soon.
+
+To avoid losing access to your email, Canvas, and campus systems, please review your account status using the link below:
+
+[Simulation Link]
+
+Thank you,
+IT Help Desk`
+        },
+
+        parking: {
+            subject: "Parking Permit Update Required",
+            body: `Hello,
+
+Our records show that your parking permit information may be incomplete for the current semester.
+
+Please review your parking account to avoid any issues with campus parking access:
+
+[Simulation Link]
+
+Thank you,
+Campus Parking Services`
+        },
+
+        package: {
+            subject: "Package Delivery Notice",
+            body: `Hello,
+
+A package delivery attempt was made, but additional confirmation is needed before the item can be released.
+
+Please review the delivery notice below:
+
+[Simulation Link]
+
+Thank you,
+Mail Services`
+        },
+
+        payroll: {
+            subject: "Direct Deposit Verification Needed",
+            body: `Hello,
+
+Your direct deposit information requires verification before the next processing period.
+
+Please review your employee account information here:
+
+[Simulation Link]
+
+Thank you,
+Human Resources`
+        },
+
+        storage: {
+            subject: "OneDrive Storage Limit Warning",
+            body: `Hello,
+
+Your OneDrive storage is close to reaching its limit. Some file syncing features may be interrupted if no action is taken.
+
+Please review your storage usage here:
+
+[Simulation Link]
+
+Thank you,
+Microsoft 365 Support`
+        }
+    };
+
+    function updatePreview() {
+        const selected = document.getElementById("template").value;
+        document.getElementById("preview-subject").innerText = templates[selected].subject;
+        document.getElementById("preview-body").innerText = templates[selected].body;
+    }
+
+    updatePreview();
+</script>
+
+</body>
+</html>

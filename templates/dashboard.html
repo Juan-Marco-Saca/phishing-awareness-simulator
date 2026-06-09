@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Phishing Campaign Dashboard</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 40px;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            max-width: 1100px;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,.15);
+        }
+
+        h1 {
+            color: #1565c0;
+        }
+
+        .nav {
+            margin-bottom: 25px;
+        }
+
+        .btn {
+            background: #1565c0;
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            margin-right: 10px;
+        }
+
+        .btn-secondary {
+            background: #555;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 25px;
+        }
+
+        th {
+            background: #1565c0;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f1f1f1;
+        }
+
+        .empty {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 5px solid #ff9800;
+            margin-top: 20px;
+        }
+
+        .badge {
+            padding: 6px 10px;
+            border-radius: 5px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .opened {
+            background: #6c757d;
+        }
+
+        .clicked {
+            background: #d32f2f;
+        }
+
+        .training {
+            background: #2e7d32;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Phishing Campaign Dashboard</h1>
+
+    <div class="nav">
+        <a href="/campaign" class="btn">Create New Campaign</a>
+        <a href="/training" class="btn btn-secondary">View Training Page</a>
+    </div>
+
+    <h2>Campaign Results</h2>
+
+    {% if results %}
+        <table>
+            <tr>
+                <th>Email</th>
+                <th>Event</th>
+                <th>Timestamp (UTC)</th>
+            </tr>
+
+            {% for row in results %}
+            <tr>
+                <td>{{ row[0] }}</td>
+
+                <td>
+                    {% if row[1] == "email_opened" %}
+                        <span class="badge opened">Email Opened</span>
+                    {% elif row[1] == "clicked_link" %}
+                        <span class="badge clicked">Clicked Link</span>
+                    {% elif row[1] == "viewed_training" %}
+                        <span class="badge training">Viewed Training</span>
+                    {% else %}
+                        {{ row[1] }}
+                    {% endif %}
+                </td>
+
+                <td>{{ row[2] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <div class="empty">
+            No campaign activity yet. Create a campaign or test a link to start logging results.
+        </div>
+    {% endif %}
+
+</div>
+
+</body>
+</html>
