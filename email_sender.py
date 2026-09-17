@@ -1,4 +1,6 @@
 import os
+import hashlib
+from html import escape
 import smtplib
 from dotenv import load_dotenv
 from email.mime.text import MIMEText
@@ -224,7 +226,12 @@ TEMPLATE_SENDERS = {
     "storage": "Microsoft 365 Support"
 }
 
-def send_simulation_email(target_email, template_name):
+def template_version(template_name):
+    template = TEMPLATES[template_name]
+    return hashlib.sha256((template['subject'] + template['body']).encode()).hexdigest()[:12]
+
+
+def send_simulation_email(target_email, template_name, token):
     if not SENDER_EMAIL or not APP_PASSWORD:
         raise ValueError("Missing SENDER_EMAIL or APP_PASSWORD environment variables.")
 
@@ -234,10 +241,12 @@ def send_simulation_email(target_email, template_name):
     if not template:
         raise ValueError("Invalid template selected.")
 
-    link = f"{BASE_URL}/login?email={target_email}"
+    link = f"{BASE_URL.rstrip('/')}/login?token={token}"
 
     subject = template["subject"]
-    body = template["body"].format(link=link)
+    body = template["body"].format(link=escape(link, quote=True))
+    pixel = f"{BASE_URL.rstrip('/')}/track?token={token}"
+    body = body.replace('</body>', f'<img src="{escape(pixel, quote=True)}" width="1" height="1" alt=""></body>')
 
     message = MIMEMultipart()
     message["From"] = f"{sender_name}"
@@ -246,7 +255,9 @@ def send_simulation_email(target_email, template_name):
 
     message.attach(MIMEText(body, "html"))
 
-    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+    with smtplib.SMTP(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
         server.starttls()
         server.login(SENDER_EMAIL, APP_PASSWORD)
-        server.send_message(message)
+        refused = server.send_message(message, from_addr=SENDER_EMAIL, to_addrs=[target_email])
+        if refused:
+            raise smtplib.SMTPRecipientsRefused(refused)

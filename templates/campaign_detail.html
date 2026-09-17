@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ campaign.name }} · Participants</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#243447;font:15px Arial,sans-serif;line-height:1.55}main{max-width:1200px;margin:30px auto;padding:28px;background:white;border-radius:12px}a{color:#1565c0}h1{font-size:30px;margin:16px 0 4px;overflow-wrap:anywhere}h2{font-size:21px}.muted{color:#607184;font-size:13px}.stats{display:flex;gap:14px;flex-wrap:wrap;margin:24px 0}.stat{flex:1;min-width:130px;border:1px solid #dae3ed;border-radius:8px;padding:16px}.stat strong{display:block;font-size:26px}.toolbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:24px 0}input{padding:12px;border:1px solid #adbed0;border-radius:6px;font:inherit;max-width:100%}button{padding:12px 18px;border:0;border-radius:6px;background:#1565c0;color:white;cursor:pointer}.person{border:1px solid #dbe4ed;border-radius:10px;margin:14px 0;overflow:hidden}.person>summary{padding:20px;cursor:pointer;background:#fafcfe}.email{font-size:17px;font-weight:bold;overflow-wrap:anywhere}.badges{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.badge{font-size:12px;padding:4px 9px;border-radius:4px;background:#eaf0f6;color:#52677e}.yes{background:#e3f3eb;color:#226647}.warning{color:#8d4600}.history{padding:20px}.event{border-left:3px solid #d3e2f5;padding:0 0 20px 18px;margin:0 0 12px}.event h3{font-size:15px;margin:0 0 4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}summary:focus-visible,a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #90b9ed;outline-offset:3px}[hidden]{display:none!important}@media(max-width:650px){main{margin:10px;padding:18px}h1{font-size:25px}.history{padding:14px}}
+</style>
+</head>
+<body><main>
+<a href="{{ url_for('dashboard') }}#campaigns">← All campaigns</a>
+<h1>{{ campaign.name }}</h1>
+<p class="muted">Campaign #{{ campaign.id }} · {{ campaign.template }} · Created {{ campaign.created_at }} (UTC)</p>
+<details style="margin:18px 0">
+<summary style="color:#a32727;cursor:pointer">Delete campaign</summary>
+<form method="post" action="{{ url_for('campaign_delete', campaign_id=campaign.id) }}" style="padding:16px;border:1px solid #eccaca;border-radius:8px;margin-top:10px">
+<p>Permanently delete <strong>{{ campaign.name }}</strong>, its {{ participants|length }} participants, and all recorded events? This cannot be undone. Its tracking links will stop working. Emails already sent cannot be recalled.</p>
+<label style="display:block;margin-bottom:14px"><input type="checkbox" name="confirm" value="delete" required> I confirm that I want to delete this campaign and its data.</label>
+<button type="submit" style="background:#a32727">Delete campaign permanently</button>
+</form>
+</details>
+<div class="stats">
+<div class="stat"><strong>{{ participants|length }}</strong>Participants</div>
+<div class="stat"><strong>{{ campaign.unique_clicks }}</strong>Visited the link</div>
+<div class="stat"><strong>{{ campaign.password_submitted }}</strong>Submitted the form</div>
+<div class="stat"><strong>{{ campaign.completed }}</strong>Completed training</div>
+</div>
+<h2>Activity by participant</h2>
+<p class="muted">Click a participant to see their full history, IP and device details, form interactions, and quiz results. Activity is attributed to the recipient's link; forwarded links may be used by someone else.</p>
+<div class="toolbar"><label for="search">Find participant <input id="search" type="search" placeholder="Search by email"></label><button type="button" onclick="location.reload()">Refresh activity</button><span id="count" class="muted" role="status">{{ participants|length }} participants</span></div>
+{% for p in participants %}
+<details class="person" data-email="{{ p.email|lower }}" id="participant-{{ p.id }}">
+<summary>
+<span class="email">{{ p.email }}</span>
+<div class="badges">
+<span class="badge {{ 'yes' if p.accepted else '' }}">{{ 'Email accepted' if p.accepted else 'Email failed' if p.failed else 'No email sent' }}</span>
+<span class="badge {{ 'yes' if p.clicked else '' }}">{{ 'Link visited' if p.clicked else 'No link visit' }}</span>
+<span class="badge {{ 'yes' if p.submitted else '' }}">{{ 'Form submitted' if p.submitted else 'No form submission' }}</span>
+<span class="badge {{ 'yes' if p.completed else '' }}">{{ 'Training completed' if p.completed else 'Training not completed' }}</span>
+{% if p.reported %}<span class="badge yes">Reported phishing</span>{% endif %}
+</div>
+{% if p.latest_request %}<div class="muted">Latest saved browser IP: {{ p.latest_request.ip_address }} · {{ p.latest_request.browser or 'Unknown browser' }} · {{ p.latest_request.os or 'Unknown OS' }} · {{ p.latest_request.device or 'Unknown device' }}</div>{% elif not p.browser_events %}<div class="muted">No browser activity yet</div>{% else %}<div class="muted">Browser activity recorded; no IP details saved</div>{% endif %}
+<div class="muted">{{ p.events|length }} events · {{ 'Latest: ' + p.events[0].timestamp + ' UTC' if p.events else 'No activity recorded' }} · Expand history</div>
+</summary>
+<div class="history">
+{% for e in p.events %}<article class="event">
+<h3>{{ e.label }}</h3><div class="muted">{{ e.timestamp }} UTC</div>
+{% if e.ip_address %}<div>IP: <strong>{{ e.ip_address }}</strong> · {{ e.browser or 'Unknown browser' }} / {{ e.os or 'Unknown OS' }} / {{ e.device or 'Unknown device' }}</div>{% endif %}
+<div class="muted">{{ e.ip_note }}</div>
+{% if e.suspected_automated %}<div class="warning">Suspected automated request</div>{% endif %}
+{% for detail in e.readable_details %}<div>{{ detail }}</div>{% endfor %}
+{% if e.user_agent %}<details><summary>User-Agent</summary><pre>{{ e.user_agent }}</pre></details>{% endif %}
+<details><summary>Technical details</summary><pre>{{ e.metadata or '{}' }}</pre></details>
+</article>{% else %}<p class="muted">No events recorded for this participant.</p>{% endfor %}
+</div>
+</details>
+{% else %}<p>No participants in this campaign.</p>{% endfor %}
+<p id="no-match" hidden>No participants match your search.</p>
+</main>
+<script>
+document.getElementById('search').addEventListener('input', event => {
+    const query = event.target.value.trim().toLowerCase();
+    let count = 0;
+    for (const person of document.querySelectorAll('.person')) {
+        person.hidden = !person.dataset.email.includes(query);
+        if (!person.hidden) count++;
+    }
+    document.getElementById('count').textContent = count + ' participants';
+    document.getElementById('no-match').hidden = count !== 0;
+});
+</script>
+</body></html>

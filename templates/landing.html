@@ -1,124 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Uh Oh...</title>
-
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Account Security · Change password</title>
     <style>
-        body{
-            background:#111;
-            color:white;
-            font-family:Arial, sans-serif;
-            text-align:center;
-            padding-top:100px;
-        }
-
-        .big{
-            font-size:48px;
-            color:red;
-            font-weight:bold;
-        }
-
-        .warning{
-            font-size:24px;
-            margin-top:30px;
-        }
-
-        .reveal{
-            display:none;
-            background:white;
-            color:black;
-            max-width:800px;
-            margin:50px auto;
-            padding:30px;
-            border-radius:10px;
-        }
-
-        button{
-            background:#0078d4;
-            color:white;
-            border:none;
-            padding:15px 25px;
-            border-radius:5px;
-            cursor:pointer;
-            font-size:18px;
-        }
-
-        ul{
-            text-align:left;
-            display:inline-block;
-        }
+        * {box-sizing:border-box} body {margin:0; min-height:100vh; background:#f3f6fa; color:#182c45; font-family:Arial,sans-serif}
+        header {background:white; border-bottom:1px solid #dce3ec; padding:22px 7%; font-weight:700; letter-spacing:.02em}
+        main {max-width:480px; margin:64px auto; background:white; padding:36px; border:1px solid #e1e7ef; border-radius:12px; box-shadow:0 12px 36px #182c450a}
+        .eyebrow {font-size:12px; text-transform:uppercase; letter-spacing:.12em; color:#506880; font-weight:bold}
+        h1 {font-size:28px; letter-spacing:-.025em; margin:12px 0} p {color:#52647a; line-height:1.6}
+        label {display:block; font-size:14px; font-weight:600; margin:22px 0 8px}
+        input {width:100%; padding:13px; font:inherit; border:1px solid #b4c2d2; border-radius:6px}
+        input:focus {outline:3px solid #c7def9; border-color:#2563b5}
+        button,.button {display:block; width:100%; background:#205db1; color:white; border:0; border-radius:6px; padding:14px; margin-top:26px; font-size:15px; font-weight:600; text-align:center; text-decoration:none; cursor:pointer}
+        button:disabled {opacity:.6; cursor:wait} .note {font-size:12px; text-align:center; margin-top:20px}
+        #status {font-size:14px; color:#963c22} [hidden] {display:none!important}
+        @media(max-width:540px) {main {margin:28px 16px; padding:26px} header {padding:20px}}
     </style>
-
-    <script>
-        setTimeout(function() {
-            document.getElementById("panic").style.display = "none";
-            document.getElementById("reveal").style.display = "block";
-        }, 4000);
-    </script>
-
 </head>
-
 <body>
-
-<div id="panic">
-
-    <div class="big">
-        🚨 ACCOUNT COMPROMISED 🚨
-    </div>
-
-    <div class="warning">
-        Downloading browser history...
-    </div>
-
-    <br>
-
-    <div class="warning">
-        Sending embarrassing search history to professors...
-    </div>
-
-    <br>
-
-    <div class="warning">
-        Contacting your mom...
-    </div>
-
-</div>
-
-<div id="reveal" class="reveal">
-
-    <h1>🎣 Relax. You Got Phished.</h1>
-
-    <h2>This was a cybersecurity awareness exercise.</h2>
-
-    <p>
-        No passwords were collected.
-        No data was stolen.
-        Your browser history is safe.
-        Your mom has not been contacted.
-    </p>
-
-    <h3>Why did this work?</h3>
-
-    <ul>
-        <li>Curiosity</li>
-        <li>Urgency</li>
-        <li>Trust in official-looking emails</li>
-        <li>Clicking before verifying</li>
-    </ul>
-
-    <br><br>
-
-    <button onclick="window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ','_blank')">
-        Claim Your Free Cybersecurity Prize 🎁
-    </button>
-
-    <br><br>
-
-    <button onclick="window.location.href='/training?email={{ email }}'">
-        Fine... I'll Do The Training
-    </button>
-
-</div>
-
+<header>Account Security</header>
+<main>
+    <section id="change-panel">
+        <div class="eyebrow">Password management</div>
+        <h1>Change your password</h1>
+        <p>Enter your current password and choose a new password to continue.</p>
+        <!-- No form or name attributes: native submission cannot transmit input values. -->
+        <div id="password-fields">
+            <label for="current">Current password</label>
+            <input id="current" type="password" autocomplete="off" maxlength="256" spellcheck="false">
+            <label for="new">New password</label>
+            <input id="new" type="password" autocomplete="off" maxlength="256" spellcheck="false">
+            <label for="confirmation">Confirm new password</label>
+            <input id="confirmation" type="password" autocomplete="off" maxlength="256" spellcheck="false">
+        </div>
+        <button id="change" type="button" disabled>Change password</button>
+        <p id="status" role="status" aria-live="polite"></p>
+        <noscript><p>This page requires JavaScript. Do not enter a password while JavaScript is disabled.</p></noscript>
+    </section>
+    <section id="debrief" hidden>
+        <div class="eyebrow">Security awareness</div>
+        <h1>This was a phishing simulation.</h1>
+        <p>Your password was not changed. The text you entered was cleared in your browser and was not sent to the server.</p>
+        <p>The exercise records that you interacted with this page, along with timing and configured request details, to help evaluate awareness training.</p>
+        <p>For a real password change, open your organization's account portal directly instead of following an unexpected email link.</p>
+        <a class="button" href="{{ url_for('training', token=token) }}">Continue to awareness training</a>
+    </section>
+</main>
+<script>
+const startedAt = performance.now();
+const endpoint = {{ url_for('interaction', token=token) | tojson }};
+const inputs = ['current', 'new', 'confirmation'].map(id => document.getElementById(id));
+const button = document.getElementById('change');
+const status = document.getElementById('status');
+let started = false;
+let pendingSubmission = null;
+function elapsed() { return Math.min(86400000, Math.max(0, Math.round(performance.now() - startedAt))); }
+async function send(payload) {
+    const response = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    if (!response.ok) throw new Error('Unable to record this interaction.');
+}
+for (const input of inputs) {
+    input.addEventListener('input', () => {
+        if (started) return;
+        started = true;
+        send({event:'password_form_started', elapsed_ms:elapsed()}).catch(() => { started = false; });
+    });
+    input.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {event.preventDefault(); button.click();}
+    });
+}
+button.disabled = false;
+button.addEventListener('click', async () => {
+    if (!pendingSubmission) {
+        pendingSubmission = {event:'password_change_submitted', elapsed_ms:elapsed(),
+            current_filled:inputs[0].value.length > 0, new_filled:inputs[1].value.length > 0,
+            confirmation_filled:inputs[2].value.length > 0};
+    }
+    // Clear all text before any network request; only booleans and timing leave the page.
+    for (const input of inputs) {input.value = ''; input.disabled = true;}
+    button.disabled = true;
+    status.textContent = '';
+    try {
+        await send(pendingSubmission);
+        document.getElementById('change-panel').hidden = true;
+        document.getElementById('debrief').hidden = false;
+        document.querySelector('#debrief h1').setAttribute('tabindex', '-1');
+        document.querySelector('#debrief h1').focus();
+    } catch (_) {
+        status.textContent = 'This is an awareness simulation. Your entries were cleared and no password was changed. Recording failed; retry without entering anything again.';
+        button.textContent = 'Retry recording';
+        button.disabled = false;
+    }
+});
+window.addEventListener('pagehide', () => {for (const input of inputs) input.value = '';});
+</script>
 </body>
 </html>

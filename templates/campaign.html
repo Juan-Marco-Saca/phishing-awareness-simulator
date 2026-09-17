@@ -107,10 +107,13 @@
     <div class="warning">
         <strong>Authorized training only:</strong>
         This simulator should only be used for your cybersecurity class project or approved awareness testing.
-        It does not collect passwords or sensitive information.
+        It records campaign interactions and quiz results, with optional IP and browser details. It does not collect passwords.
     </div>
 
     <form method="POST">
+
+        <label for="name">Campaign name</label>
+        <input id="name" name="name" maxlength="120" placeholder="September awareness exercise">
 
         <label>Select Campaign Template</label>
 

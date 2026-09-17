@@ -187,55 +187,34 @@
 
         </form>
 
-        <div id="results"></div>
+        <div id="results" role="status" aria-live="polite"></div>
 
     </div>
 
 </div>
 
 <script>
-function gradeQuiz() {
-    let score = 0;
-
-    if (document.querySelector('input[name="q1"]:checked')?.value === "a") {
-        score++;
-    }
-
-    if (document.querySelector('input[name="q2"]:checked')?.value === "b") {
-        score++;
-    }
-
-    if (document.querySelector('input[name="q3"]:checked')?.value === "c") {
-        score++;
-    }
-
-    if (document.querySelector('input[name="q4"]:checked')?.value === "b") {
-        score++;
-    }
-
-    if (document.querySelector('input[name="q5"]:checked')?.value === "a") {
-        score++;
-    }
-
-    let resultBox = document.getElementById("results");
-
-    if (score === 5) {
-        resultBox.style.background = "#e8f5e9";
-        resultBox.style.borderLeft = "5px solid green";
-
-        resultBox.innerHTML = `
-            <h3 style="color:green;">✅ Perfect! You scored 5/5.</h3>
-            <p>You successfully completed the phishing awareness training.</p>
-            <a href="/" class="btn">Return to Dashboard</a>
-        `;
-    } else {
-        resultBox.style.background = "#ffebee";
-        resultBox.style.borderLeft = "5px solid red";
-
-        resultBox.innerHTML = `
-            <h3 style="color:red;">Score: ${score}/5</h3>
-            <p>Review the training material and try again.</p>
-        `;
+async function gradeQuiz() {
+    const button = document.querySelector('#quizForm button');
+    const resultBox = document.getElementById('results');
+    const answers = Object.fromEntries(new FormData(document.getElementById('quizForm')));
+    button.disabled = true;
+    resultBox.textContent = 'Checking your answers…';
+    try {
+        const response = await fetch({{ url_for('quiz', token=token) | tojson }}, {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(answers)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Unable to save your results. Please try again.');
+        resultBox.style.background = result.passed ? '#e8f5e9' : '#ffebee';
+        resultBox.textContent = `Score: ${result.score}/${result.total}. ` +
+            (result.passed ? 'You successfully completed the training.' : 'Review the material and try again.') +
+            (result.preview ? ' Preview only — results are not saved.' : ' Your results have been saved.');
+    } catch (error) {
+        resultBox.textContent = error.message || 'Unable to save your results. Please try again.';
+    } finally {
+        button.disabled = false;
     }
 }
 </script>

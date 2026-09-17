@@ -1,144 +1,123 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Phishing Campaign Dashboard</title>
-
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            margin: 40px;
-        }
-
-        .container {
-            background: white;
-            padding: 30px;
-            max-width: 1100px;
-            margin: auto;
-            border-radius: 10px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,.15);
-        }
-
-        h1 {
-            color: #1565c0;
-        }
-
-        .nav {
-            margin-bottom: 25px;
-        }
-
-        .btn {
-            background: #1565c0;
-            color: white;
-            padding: 12px 20px;
-            text-decoration: none;
-            border-radius: 5px;
-            display: inline-block;
-            margin-right: 10px;
-        }
-
-        .btn-secondary {
-            background: #555;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 25px;
-        }
-
-        th {
-            background: #1565c0;
-            color: white;
-            padding: 12px;
-            text-align: left;
-        }
-
-        td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        tr:hover {
-            background: #f1f1f1;
-        }
-
-        .empty {
-            background: #fff3cd;
-            padding: 15px;
-            border-left: 5px solid #ff9800;
-            margin-top: 20px;
-        }
-
-        .badge {
-            padding: 6px 10px;
-            border-radius: 5px;
-            color: white;
-            font-size: 14px;
-        }
-
-        .opened {
-            background: #6c757d;
-        }
-
-        .clicked {
-            background: #d32f2f;
-        }
-
-        .training {
-            background: #2e7d32;
-        }
+        body {font-family: Arial, sans-serif; background:#f4f6f8; margin:0; padding:24px; color:#243447}
+        main {max-width:1400px; margin:auto; background:white; padding:28px; border-radius:10px}
+        h1,h2 {color:#1565c0} a {color:#1565c0} nav {display:flex; gap:24px}
+        .scroll {overflow-x:auto} table {width:100%; border-collapse:collapse; font-size:14px}
+        th,td {text-align:left; padding:12px; border-bottom:1px solid #ddd; vertical-align:top}
+        th {background:#edf4fc} .note {color:#526273; line-height:1.5}
+        section {margin:32px 0} .report-form {display:flex; flex-wrap:wrap; align-items:end; gap:16px}
+        label {display:block; margin-bottom:6px} input,select,button {padding:10px; max-width:100%; box-sizing:border-box}
+        button {background:#1565c0; color:white; border:0; border-radius:4px; cursor:pointer}
+        pre {white-space:pre-wrap; overflow-wrap:anywhere; max-width:420px} .flag {color:#8c4300}
+        @media(max-width:600px) {body {padding:8px} main {padding:16px} h1 {font-size:26px}}
+        * {box-sizing:border-box} h1 {font-size:30px; margin:6px 0} h2 {font-size:21px; color:#233d5d} h3 {font-size:16px}
+        .topbar {display:flex; justify-content:space-between; align-items:center; gap:20px} .eyebrow {text-transform:uppercase; letter-spacing:.13em; font-size:11px; color:#64748b; font-weight:bold}
+        .primary {background:#1565c0; color:white; padding:13px 18px; border-radius:7px; text-decoration:none; white-space:nowrap}
+        nav {padding:18px 0; border-bottom:1px solid #e2e8f0; flex-wrap:wrap} nav a {text-decoration:none; font-size:14px}
+        .help-panel {background:#edf5ff; border:1px solid #d2e3f7; border-radius:10px; padding:24px; display:grid; grid-template-columns:1fr 1fr; gap:32px; line-height:1.6}
+        .help-panel h2 {margin-top:0} .help-panel ol {padding-left:20px} .stats {display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin:22px 0}
+        .stats article {padding:22px; border:1px solid #dbe4ed; border-radius:10px; background:#fafcfe}
+        .stats article>span {font-size:12px; font-weight:bold; color:#64748b} .stats strong {font-size:34px; display:block; margin:10px 0}
+        .stats p {font-size:13px; line-height:1.5; color:#536579} .refresh-bar {display:flex; gap:16px; align-items:center; flex-wrap:wrap; font-size:13px}
+        .refresh-bar label {margin:0} .secondary {background:white; border:1px solid #bdcbdc; color:#25476f}
+        .empty-state {padding:20px; border-left:4px solid #1565c0; background:#f4f8fe} .empty-state h3 {margin:0 0 8px}
+        .detail-line {margin-bottom:8px} details {margin-top:10px} summary {cursor:pointer; color:#38618d; font-size:12px} time {display:block; margin:8px 0; color:#617286; font-size:12px}
+        button,a,input,select {outline-offset:4px} th {font-size:12px; color:#4b627c} td {line-height:1.55; min-width:140px} .scroll {border:1px solid #e1e7ef; border-radius:8px}
+        @media(max-width:800px) {.help-panel,.stats {grid-template-columns:1fr} .topbar {align-items:flex-start; flex-direction:column} .help-panel {gap:10px}}
     </style>
 </head>
-
-<body>
-
-<div class="container">
-
-    <h1>Phishing Campaign Dashboard</h1>
-
-    <div class="nav">
-        <a href="/campaign" class="btn">Create New Campaign</a>
-        <a href="/training" class="btn btn-secondary">View Training Page</a>
+<body><main>
+    <div class="topbar"><div><p class="eyebrow">Awareness simulator</p><h1>Campaign overview</h1><p class="note">See what happened, verify tracking, and follow training progress.</p></div>
+    <a class="primary" href="{{ url_for('campaign') }}">+ Create campaign</a></div>
+    <nav><a href="#activity">Recent activity</a><a href="#campaigns">Campaigns</a><a href="{{ url_for('training') }}">Training preview (not tracked)</a></nav>
+    <section class="help-panel">
+        <div><h2>Check your tracking</h2><p>A participant must open a campaign link to generate IP and device data. Sending an email alone does not collect it.</p>
+        <form method="post" action="{{ url_for('tracking_test') }}" target="_blank"><button type="submit">Test tracking ↗</button></form>
+        <p class="note">Opens a separate test campaign in a new tab. No email is sent. Use dummy text, submit the form, then return here.</p></div>
+        <div><h3>What will appear?</h3><ol><li>Open the test: IP, browser, device, and page visit.</li><li>Type dummy text: form interaction and elapsed time.</li><li>Submit: filled-field indicators, then training.</li></ol><p class="note">Passwords are never saved. Local tests normally show 127.0.0.1. Test campaigns are labeled separately.</p></div>
+    </section>
+    <div class="refresh-bar"><label><input id="auto-refresh" type="checkbox" checked> Update every 10 seconds</label><button id="refresh" type="button" class="secondary">Refresh now</button><span id="refresh-status" role="status">Showing saved data</span></div>
+    <div id="telemetry-status">
+      <section class="stats">
+        <article><span>Collection settings</span><h3>IP and device collection is {{ 'on' if telemetry.details_enabled else 'off' }}</h3><p>{{ 'New browser events include request details.' if telemetry.details_enabled else 'Set COLLECT_REQUEST_DETAILS=true in .env and restart to enable it.' }}</p></article>
+        <article><span>Browser activity events</span><strong>{{ telemetry.visits }}</strong><p>Page views, interactions, and training events; not unique people.</p></article>
+        <article><span>Browser events with an IP</span><strong>{{ telemetry.with_ip }}</strong><p>Mail sending and manual reports do not have a participant IP.</p></article>
+      </section>
+      {% if not telemetry.visits %}<div class="empty-state"><h3>No participant visits recorded yet</h3><p>Your email may have been sent, but nobody has opened a tracked page. Use <strong>Test tracking</strong> above to verify the complete flow.</p></div>{% else %}<p class="note">Latest browser activity (UTC): {{ telemetry.last_visit }}</p>{% endif %}
     </div>
-
-    <h2>Campaign Results</h2>
-
-    {% if results %}
-        <table>
-            <tr>
-                <th>Email</th>
-                <th>Event</th>
-                <th>Timestamp (UTC)</th>
-            </tr>
-
-            {% for row in results %}
-            <tr>
-                <td>{{ row[0] }}</td>
-
-                <td>
-                    {% if row[1] == "email_opened" %}
-                        <span class="badge opened">Email Opened</span>
-                    {% elif row[1] == "clicked_link" %}
-                        <span class="badge clicked">Clicked Link</span>
-                    {% elif row[1] == "viewed_training" %}
-                        <span class="badge training">Viewed Training</span>
-                    {% else %}
-                        {{ row[1] }}
-                    {% endif %}
-                </td>
-
-                <td>{{ row[2] }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    {% else %}
-        <div class="empty">
-            No campaign activity yet. Create a campaign or test a link to start logging results.
-        </div>
-    {% endif %}
-
-</div>
-
-</body>
-</html>
+    <section id="campaigns">
+        <h2>Campaign results</h2>
+        <p class="note">Click and report rates use SMTP-accepted recipients, not confirmed inbox delivery. Opens are image requests, and clicks can include scanners or forwarded links. Device details are estimates.</p>
+        <div class="scroll"><table>
+            <thead><tr><th>Campaign / template</th><th>Sending</th><th>Opens / clicks</th><th>Reports</th><th>Training</th></tr></thead>
+            <tbody>{% for c in campaigns %}<tr>
+                <td><a href="{{ url_for('campaign_detail', campaign_id=c.id) }}"><strong>{{ c.name }}</strong></a><br>#{{ c.id }} · {{ c.template }}<br><a href="{{ url_for('campaign_detail', campaign_id=c.id) }}">View participants →</a><br><small>Version {{ c.template_version }}</small></td>
+                <td>{{ c.targets }} targets<br>{{ c.accepted }} SMTP accepted<br>{{ c.failed }} failed</td>
+                <td>{{ c.unique_opens }} unique opens (estimated)<br>{{ c.unique_clicks }} unique click recipients<br>{{ c.click_requests }} click requests<br>{{ c.suspected_clicks }} suspected automated requests<br>Click rate: {{ (c.click_rate|string + '%') if c.click_rate is not none else 'N/A' }}</td>
+                <td>{{ c.unique_reports }} reporters<br>{{ c.reported_before_click }} before any click<br>Report rate: {{ (c.report_rate|string + '%') if c.report_rate is not none else 'N/A' }}<br>First report: {{ (c.seconds_to_first_report|string + 's after campaign creation') if c.seconds_to_first_report is not none else 'N/A' }}</td>
+                <td>Password form: {{ c.password_viewed }} viewed / {{ c.password_started }} started / {{ c.password_submitted }} submitted<br>{{ c.training_viewed }} training viewed / {{ c.completed }} completed<br>Completion among viewers: {{ (c.completion_rate|string + '%') if c.completion_rate is not none else 'N/A' }}<br>Average quiz attempt: {{ (c.average_score|string + '/5') if c.average_score is not none else 'N/A' }}</td>
+            </tr>{% else %}<tr><td colspan="5">No campaigns yet.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </section>
+    {% if recipients %}<section>
+        <h2>Record a phishing report</h2>
+        <p class="note">Administrator entry for a report received through your existing reporting channel. This does not read a mailbox automatically.</p>
+        <form method="post" action="{{ url_for('report') }}" class="report-form">
+            <div><label for="recipient">Participant / campaign</label><select id="recipient" name="recipient_id" required>
+                {% for r in recipients %}<option value="{{ r.id }}">{{ r.email }} — {{ r.campaign_name }} (#{{ r.campaign_id }})</option>{% endfor %}
+            </select></div>
+            <div><label for="channel">Reporting channel</label><select id="channel" name="channel">
+                <option value="email">Email</option><option value="report_button">Mail client's report button</option>
+                <option value="in_person">In person</option><option value="phone">Phone</option><option value="other">Other</option>
+            </select></div>
+            <div><label for="reported_at">Reported at (UTC; blank means now)</label><input type="datetime-local" id="reported_at" name="reported_at" step="1"></div>
+            <button type="submit">Record report</button>
+        </form>
+    </section>{% endif %}
+    <section id="activity">
+        <h2>Recent activity</h2><p class="note">Newest first. Collection status is explained on each event; technical details are optional.</p>
+        <div class="scroll"><table>
+            <thead><tr><th>Participant</th><th>Campaign</th><th>Event / UTC time</th><th>Request details</th><th>Event details</th></tr></thead>
+            <tbody>{% for row in results %}<tr>
+                <td>{{ row.email }}</td>
+                <td>{{ row.campaign_name or 'Legacy / unattributed' }}<br>{{ row.template or '' }}</td>
+                <td><strong>{{ row.label }}</strong><br><time>{{ row.timestamp }}</time><br><small>{{ row.source or 'legacy' }}</small></td>
+                <td>{% if row.ip_address %}<strong>{{ row.ip_address }}</strong><br>{% endif %}<span class="note">{{ row.ip_note }}</span>
+                    {% if row.browser %}<br>{{ row.browser }} · {{ row.os }} · {{ row.device }}{% endif %}
+                    {% if row.suspected_automated %}<br><strong class="flag">Suspected automated request</strong>{% endif %}
+                    {% if row.user_agent %}<details><summary>User-Agent</summary><pre>{{ row.user_agent }}</pre></details>{% endif %}</td>
+                <td>{% for detail in row.readable_details %}<div class="detail-line">{{ detail }}</div>{% else %}<span class="note">{{ 'Server-side email activity' if row.source == 'smtp' else 'Event saved' }}</span>{% endfor %}
+                <details><summary>Technical details</summary><pre>{{ row.metadata or '{}' }}</pre></details></td>
+            </tr>{% else %}<tr><td colspan="5">No activity recorded.</td></tr>{% endfor %}</tbody>
+        </table></div>
+    </section>
+</main>
+<script>
+let refreshing = false;
+async function refreshData() {
+    if (refreshing) return;
+    refreshing = true;
+    const message = document.getElementById('refresh-status');
+    message.textContent = 'Checking for activity…';
+    try {
+        const response = await fetch({{ url_for('dashboard') | tojson }}, {cache:'no-store'});
+        if (!response.ok) throw new Error();
+        const page = new DOMParser().parseFromString(await response.text(), 'text/html');
+        const ids = ['telemetry-status', 'campaigns', 'activity'];
+        if (ids.some(id => !page.getElementById(id))) throw new Error();
+        for (const id of ids) document.getElementById(id).replaceWith(page.getElementById(id));
+        message.textContent = 'Updated ' + new Date().toLocaleTimeString();
+    } catch (_) { message.textContent = 'Could not refresh. Check the server or reload to sign in again.'; }
+    finally { refreshing = false; }
+}
+document.getElementById('refresh').addEventListener('click', refreshData);
+setInterval(() => { if (document.getElementById('auto-refresh').checked && !document.hidden) refreshData(); }, 10000);
+window.addEventListener('focus', () => {if (document.getElementById('auto-refresh').checked) refreshData();});
+</script>
+</body></html>
