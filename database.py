@@ -81,7 +81,7 @@ def get_recipients():
 
 def get_recipient(token):
     with connection() as conn:
-        row = conn.execute('''SELECT r.*, c.template_version FROM recipients r
+        row = conn.execute('''SELECT r.*, c.template, c.template_version FROM recipients r
             JOIN campaigns c ON c.id=r.campaign_id WHERE r.token=?''', (token,)).fetchone()
         return dict(row) if row else None
 
@@ -148,6 +148,9 @@ def get_campaign_summaries():
                         password_viewed=len(ids('password_form_viewed')),
                         password_started=len(ids('password_form_started')),
                         password_submitted=len(ids('password_change_submitted')),
+                        scenario_viewed=len(ids('scenario_page_viewed')),
+                        scenario_submitted=len(ids('scenario_action_submitted')),
+                        all_submitted=len(ids('password_change_submitted') | ids('scenario_action_submitted')),
                         click_requests=sum(e['event_type'] == 'clicked_link' for e in rows),
                         suspected_clicks=sum(e['event_type'] == 'clicked_link' and e['suspected_automated'] for e in rows),
                         unique_reports=len(reports), reported_before_click=before,

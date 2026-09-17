@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{{ scenario.title }} · {{ scenario.brand }}</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f5f8;color:#203149;font:15px Arial,sans-serif;line-height:1.6}header{background:white;border-bottom:1px solid #dce4ed;padding:22px max(24px,8%);font-size:18px;font-weight:bold;color:{{ scenario.color }}}main{max-width:660px;margin:48px auto;padding:0 18px}.card{background:white;border:1px solid #dce4ed;border-radius:12px;padding:34px;box-shadow:0 10px 30px #20314908}.eyebrow{font-size:11px;letter-spacing:2px;font-weight:bold;color:#697d91}h1{font-size:28px;line-height:1.25;margin:12px 0 18px}p{color:#526579}.summary{background:#f6f8fb;padding:22px;border-radius:8px;margin:24px 0}.row{display:flex;justify-content:space-between;gap:20px;padding:10px 0;border-bottom:1px solid #e1e8f0}.row:last-child{border-bottom:0}.pill{font-size:12px;font-weight:bold;color:{{ scenario.color }}}button,.button{display:block;width:100%;background:{{ scenario.color }};padding:14px;border:0;border-radius:6px;color:white;text-decoration:none;text-align:center;font:600 15px Arial,sans-serif;cursor:pointer}button:disabled{opacity:.6;cursor:wait}.note{font-size:12px}.meter{height:10px;background:#dce5ef;border-radius:8px;overflow:hidden;margin:14px 0}.meter span{display:block;width:92%;height:100%;background:{{ scenario.color }}}.step{margin:10px 0;color:#526579}[hidden]{display:none!important}:focus-visible{outline:3px solid #88b4e7;outline-offset:3px}@media(max-width:500px){main{margin:24px auto}.card{padding:24px}h1{font-size:25px}.row{flex-direction:column;gap:4px}}
+</style></head><body>
+<header>{{ scenario.brand }}</header><main><div class="card">
+<section id="service"><div class="eyebrow">{{ scenario.category }}</div><h1>{{ scenario.title }}</h1><p>{{ scenario.intro }}</p>
+<div class="summary"><div class="row"><strong>{{ scenario.detail }}</strong><span class="pill">{{ scenario.status }}</span></div>
+{% if scenario_key == 'parking' %}<div class="row"><span>Permit period</span><strong>Current academic term</strong></div><div class="row"><span>Review step</span><strong>Permit acknowledgment</strong></div>
+{% elif scenario_key == 'package' %}<div class="row"><span>Collection point</span><strong>Campus mailroom</strong></div><div class="row"><span>Next step</span><strong>Acknowledge instructions</strong></div><p class="note">Bring your campus identification when collecting items.</p>
+{% elif scenario_key == 'payroll' %}<div class="row"><span>Request type</span><strong>Profile acknowledgment</strong></div><div class="row"><span>Department</span><strong>People services</strong></div><p class="note">No payment or bank details are needed for this review.</p>
+{% elif scenario_key == 'storage' %}<div class="row"><span>Storage used</span><strong>92% of allocation</strong></div><div class="meter" role="img" aria-label="92 percent of storage used"><span></span></div><p class="note">Review large files, shared folders and synced documents.</p>{% endif %}
+</div>
+<button id="action" type="button" disabled>{{ 'Review storage options' if scenario_key == 'storage' else 'Acknowledge collection notice' if scenario_key == 'package' else 'Confirm profile review' if scenario_key == 'payroll' else 'Confirm permit review' }}</button>
+<p id="status" role="status" aria-live="polite"></p><noscript><p>JavaScript is required to continue.</p></noscript>
+</section>
+<section id="debrief" hidden><div class="eyebrow">Security awareness</div><h1>This was a phishing simulation.</h1><p>This notice was part of an awareness exercise. No permit, delivery, payroll or storage account was changed, and the displayed account information was illustrative.</p><p>Your page visit and button interaction were recorded with timing and configured request details. No personal form data was requested.</p><p>For real account requests, open the service through your usual campus portal and verify unexpected notices through a known support channel.</p><a class="button" href="{{ url_for('start_training', token=token) }}">Continue to awareness training</a></section>
+</div><p class="note" style="text-align:center">{{ scenario.brand }} · Account services</p></main>
+{% if token %}<script src="{{ url_for('static', filename='learning.js') }}" data-token="{{ token }}" defer></script>{% endif %}
+<script>
+const action = document.getElementById('action');
+const startedAt = performance.now();
+let payload;
+action.disabled = false;
+action.addEventListener('click', async () => {
+    action.disabled = true;
+    payload = payload || {event:'scenario_action_submitted', elapsed_ms:Math.min(86400000, Math.max(0, Math.round(performance.now()-startedAt)))};
+    try {
+        const response = await (window.telemetryFetch ? (url, options) => window.telemetryFetch('interaction', url, options) : fetch)({{ url_for('interaction', token=token)|tojson }}, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+        if (!response.ok) throw new Error();
+        document.getElementById('service').hidden = true;
+        document.getElementById('debrief').hidden = false;
+        const heading = document.querySelector('#debrief h1'); heading.tabIndex=-1; heading.focus();
+    } catch (_) {
+        document.getElementById('status').textContent = 'This is an awareness exercise. No account changes were made. Recording failed; please retry.';
+        action.textContent = 'Retry recording'; action.disabled=false;
+    }
+});
+</script></body></html>

@@ -134,6 +134,74 @@ No passwords or sensitive credentials are collected. The simulator is designed t
 
 ## Telemetry and reporting
 
+### Response times and learning progress
+
+Each participant's expanded campaign history now shows time from SMTP acceptance
+to first click/report, whether reporting preceded submission, and first-versus-latest
+quiz scores. Missing or negative timing intervals remain unavailable. Training
+opened at least 24 hours ago without completion is labeled **Incomplete after
+24 hours**; this is an operational threshold, not proof of abandonment. New charts
+show follow-through, questions missed on the first attempt, and quiz improvement
+among people with multiple attempts. Cross-campaign comparisons match email
+addresses case-insensitively and stay behind administrator authentication. They
+include all other recorded campaigns (including tests), not a normalized risk score.
+
+Training links now pass through `/start-training` before loading the training
+page, so link requests and successful page requests can be distinguished. New
+training visits record section-heading visibility and cumulative active seconds
+under a random per-page session ID. Active time pauses while the tab is hidden,
+unfocused, or idle for 60 seconds; checkpoints are sent every 30 seconds and on
+page exit. The server uses the maximum checkpoint per session, preventing repeat
+checkpoints from inflating totals. Multiple tabs can overlap; visible headings
+do not prove reading, and page-exit or interrupted requests may be lost. Browsers
+without the required APIs simply omit these optional signals. Previews without
+a recipient token record none of this activity.
+
+Browser network/5xx request failures and detectable page script errors are reported
+using fixed operation names and counts. Unsent counters are retained in browser
+session storage (up to 100 per operation) and retried when possible; no request
+bodies, passwords, arbitrary error text or visited URLs are saved. Failure reporting
+is best-effort and may duplicate a count after an ambiguous response. A browser
+that never reconnects, a failure before the tracking script loads, or an unreachable
+site may produce no report. Server/database errors remain in application logs.
+
+Confirmed delivery and bounce feedback are explicitly unavailable until a mail
+provider integration is configured. No delivery success is inferred from SMTP
+acceptance. Existing events support the derived metrics; section and active-time
+signals are available only for new visits after deployment.
+
+Run `node tests/learning_client.test.cjs` to check browser timer and reporting
+behavior in the isolated JavaScript harness, in addition to the Python test suite.
+
+### Campaign charts
+
+Open a campaign from the dashboard to see participant actions, daily browser
+activity (UTC), latest quiz scores, device categories, and time to first
+submission. Charts render locally without an external chart service and include
+exact counts and accessible data tables. The action chart counts unique recipients;
+daily activity counts events, including repeats. Quiz and device charts count
+each participant once, using the latest valid score or available device category.
+Submission timing uses the first recorded submission per participant, measured
+from that page load. Unknown device data and empty charts are explicit.
+Use **Refresh activity** to reload the graphs. The participant search does not
+filter the campaign-wide charts.
+
+### Matching emails and landing pages
+
+All five email designs use a shared notification layout, with service-specific
+copy, colors, status panels and actions. The campaign editor previews the actual
+HTML email in a sandboxed frame without sending mail or recording opens.
+Parking, package, payroll and storage links open matching service pages rather
+than the password form. Their account details are illustrative simulation data.
+These pages request no bank details, addresses or other personal form data.
+
+Service page requests record `scenario_page_viewed`; clicking their primary
+action records `scenario_action_submitted` with client-reported elapsed time and
+the server-selected scenario. IP/device telemetry follows the existing setting.
+The page then reveals the exercise and links to training. Campaign dashboards
+and participant histories include these service actions. Password campaigns
+retain the existing password-change simulation and its value-free telemetry.
+
 ### Verify tracking from the dashboard
 
 To remove a campaign, open its participant detail page and expand **Delete

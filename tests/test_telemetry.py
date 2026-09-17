@@ -203,6 +203,38 @@ class TelemetryTests(unittest.TestCase):
     def test_tracking_test_is_admin_only(self):
         self.assertEqual(self.module.app.test_client().post('/tracking-test').status_code, 401)
 
+    def test_learning_events_are_validated_and_training_link_is_recorded(self):
+        token = self.campaign()
+        response = self.client.get('/start-training?token=' + token)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.rows('events')[-1]['event_type'], 'training_link_clicked')
+        body = {'event': 'training_activity', 'session_id': '12345678-1234-1234-1234-123456789012', 'active_seconds': 20}
+        self.assertEqual(self.client.post('/learning-event?token=' + token, json=body).status_code, 200)
+        for bad in (dict(body, password='never-store'), dict(body, active_seconds=-1),
+                    {'event': 'training_section_viewed', 'section': 'arbitrary-secret'}):
+            self.assertEqual(self.client.post('/learning-event?token=' + token, json=bad).status_code, 400)
+        self.assertEqual(self.client.post('/learning-event', json=body).status_code, 400)
+        self.assertNotIn('never-store', json.dumps(self.rows('events')))
+
+    def test_scenario_landing_pages_and_interactions_match_campaign(self):
+        from scenarios import SCENARIOS
+        for key in ('parking', 'package', 'payroll', 'storage'):
+            recipient = database.create_campaign(key, key, '1', ['test@example.com'])[0]
+            page = self.client.get('/login?token=' + recipient['token'])
+            self.assertIn(SCENARIOS[key]['title'], page.get_data(as_text=True))
+            self.assertNotIn('Current password', page.get_data(as_text=True))
+            response = self.client.post('/interaction?token=' + recipient['token'], json={'event': 'scenario_action_submitted', 'elapsed_ms': 900})
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(json.loads(self.rows('events')[-1]['metadata'])['scenario'], key)
+            self.assertEqual(self.client.post('/interaction?token=' + recipient['token'], json={'event': 'password_change_submitted'}).status_code, 400)
+
+    def test_email_preview_uses_current_template(self):
+        response = self.client.get('/email-preview/parking')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Review your parking permit', response.data)
+        self.assertNotIn(b'/track?', response.data)
+        self.assertEqual(self.module.app.test_client().get('/email-preview/parking').status_code, 401)
+
     def test_campaign_detail_groups_users_and_excludes_other_campaigns(self):
         token = self.campaign()
         self.client.get('/login?token=' + token)
@@ -215,6 +247,8 @@ class TelemetryTests(unittest.TestCase):
             self.assertIn(expected, html)
         self.assertNotIn('outsider@example.com', html)
         self.assertNotIn('Unrelated campaign', html)
+        self.assertIn('Campaign analytics', html)
+        self.assertIn('Time to first submission', html)
         self.assertIn('href="/campaign/1"', self.client.get('/').get_data(as_text=True))
 
     def test_campaign_detail_requires_admin_and_handles_missing_campaign(self):

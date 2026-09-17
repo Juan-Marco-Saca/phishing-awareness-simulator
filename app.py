@@ -11,6 +11,9 @@ from database import (init_db, log_event, get_results, create_campaign, get_reci
 from email_sender import send_simulation_email, TEMPLATES, template_version
 from telemetry import request_details
 from dashboard_view import dashboard_data
+from scenarios import SCENARIOS
+from campaign_charts import build_charts
+from learning_analytics import summarize_learning, learning_charts, SECTIONS
 
 app = Flask(__name__)
 app.config.update(COLLECT_REQUEST_DETAILS=os.getenv('COLLECT_REQUEST_DETAILS', 'true').lower() == 'true',
@@ -18,7 +21,7 @@ app.config.update(COLLECT_REQUEST_DETAILS=os.getenv('COLLECT_REQUEST_DETAILS', '
                   MAX_CONTENT_LENGTH=256 * 1024)
 init_db()
 CORRECT = {'q1': 'a', 'q2': 'b', 'q3': 'c', 'q4': 'b', 'q5': 'a'}
-ADMIN_ENDPOINTS = ('dashboard', 'campaign', 'report', 'tracking_test', 'campaign_detail', 'campaign_delete')
+ADMIN_ENDPOINTS = ('dashboard', 'campaign', 'report', 'tracking_test', 'campaign_detail', 'campaign_delete', 'email_preview')
 
 
 @app.before_request
@@ -93,7 +96,8 @@ def campaign_detail(campaign_id):
     selected = next((c for c in get_campaign_summaries() if c['id'] == campaign_id), None)
     if selected is None:
         abort(404, 'Campaign not found.')
-    events = dashboard_data([e for e in get_results() if e['campaign_id'] == campaign_id],
+    all_events = get_results()
+    events = dashboard_data([e for e in all_events if e['campaign_id'] == campaign_id],
                             app.config['COLLECT_REQUEST_DETAILS'])['events']
     participants = []
     for recipient in get_recipients():
@@ -103,12 +107,20 @@ def campaign_detail(campaign_id):
         kinds = {e['event_type'] for e in history}
         browser_events = [e for e in history if e['source'] == 'web' and e['event_type'] != 'email_opened']
         latest_request = next((e for e in browser_events if e['ip_address']), None)
+        prior_campaigns = {}
+        for event in all_events:
+            if event['campaign_id'] and event['campaign_id'] != campaign_id and event['email'].casefold() == recipient['email'].casefold():
+                prior_campaigns.setdefault(event['campaign_id'], []).append(event)
+        comparisons = [dict(id=cid, name=rows[0]['campaign_name'], metrics=summarize_learning(rows))
+                       for cid, rows in sorted(prior_campaigns.items())]
         participants.append({'email': recipient['email'], 'id': recipient['id'], 'events': history,
+            'learning': summarize_learning(history), 'comparisons': comparisons,
             'browser_events': browser_events, 'latest_request': latest_request,
             'accepted': 'email_accepted' in kinds, 'failed': 'email_failed' in kinds,
-            'clicked': 'clicked_link' in kinds, 'submitted': 'password_change_submitted' in kinds,
+            'clicked': 'clicked_link' in kinds, 'submitted': bool(kinds & {'password_change_submitted', 'scenario_action_submitted'}),
             'completed': 'training_completed' in kinds, 'reported': 'phishing_reported' in kinds})
-    return render_template('campaign_detail.html', campaign=selected, participants=participants)
+    return render_template('campaign_detail.html', campaign=selected, participants=participants,
+                           charts=build_charts(events, len(participants)) + learning_charts(participants))
 
 
 @app.post('/campaign/<int:campaign_id>/delete')
@@ -141,7 +153,14 @@ def campaign():
             else:
                 log_event(recipient, 'email_accepted', source='smtp')
         return redirect(url_for('dashboard'))
-    return render_template('campaign.html')
+    return render_template('campaign.html', email_templates=TEMPLATES)
+
+
+@app.get('/email-preview/<template_name>')
+def email_preview(template_name):
+    if template_name not in TEMPLATES:
+        abort(404)
+    return Response(TEMPLATES[template_name]['body'].format(link='#'), mimetype='text/html')
 
 
 @app.route('/track')
@@ -154,6 +173,11 @@ def track_open():
 def fake_login():
     recipient = participant()
     record(recipient, 'clicked_link')
+    if recipient['template'] != 'password':
+        log_event(recipient, 'scenario_page_viewed', metadata={'scenario': recipient['template']},
+                  details=request_details(request, app.config['COLLECT_REQUEST_DETAILS']))
+        return render_template('scenario_landing.html', token=recipient['token'],
+                               scenario=SCENARIOS[recipient['template']], scenario_key=recipient['template'])
     record(recipient, 'password_form_viewed')
     return render_template('landing.html', token=recipient['token'])
 
@@ -166,12 +190,13 @@ def interaction():
     if not isinstance(body, dict) or set(body) - allowed:
         return jsonify(error='Unsupported interaction data.'), 400
     kind = body.get('event')
-    if kind not in ('password_form_started', 'password_change_submitted'):
+    valid_events = ('password_form_started', 'password_change_submitted') if recipient['template'] == 'password' else ('scenario_action_submitted',)
+    if kind not in valid_events:
         return jsonify(error='Unsupported interaction event.'), 400
     elapsed = body.get('elapsed_ms', 0)
     if type(elapsed) is not int or not 0 <= elapsed <= 86400000:
         return jsonify(error='Invalid elapsed time.'), 400
-    metadata = {'elapsed_ms': elapsed, 'timing_source': 'client', 'form_version': '1'}
+    metadata = {'elapsed_ms': elapsed, 'timing_source': 'client', 'form_version': '1', 'scenario': recipient['template']}
     for field in ('current_filled', 'new_filled', 'confirmation_filled'):
         if field in body:
             if type(body[field]) is not bool:
@@ -188,6 +213,38 @@ def training():
     if recipient:
         record(recipient, 'viewed_training')
     return render_template('training.html', token=recipient['token'] if recipient else None)
+
+
+@app.get('/start-training')
+def start_training():
+    recipient = participant()
+    record(recipient, 'training_link_clicked')
+    return redirect(url_for('training', token=recipient['token']))
+
+
+@app.post('/learning-event')
+def learning_event():
+    recipient = participant()
+    body = request.get_json(silent=True)
+    if not isinstance(body, dict):
+        abort(400)
+    kind = body.get('event')
+    fields = {'training_section_viewed': {'section'}, 'training_activity': {'session_id', 'active_seconds'},
+              'client_request_failed': {'operation', 'count'}}
+    if not isinstance(kind, str) or kind not in fields or set(body) != fields[kind] | {'event'}:
+        abort(400, 'Invalid learning event fields.')
+    if kind == 'training_section_viewed' and (not isinstance(body['section'], str) or body['section'] not in SECTIONS):
+        abort(400)
+    if kind == 'training_activity' and (not isinstance(body['session_id'], str) or
+        not re.fullmatch(r'[a-fA-F0-9-]{36}', body['session_id']) or type(body['active_seconds']) is not int or
+        not 0 <= body['active_seconds'] <= 86400):
+        abort(400)
+    if kind == 'client_request_failed' and (body['operation'] not in ('interaction', 'quiz', 'training_progress', 'page_load') or
+        type(body['count']) is not int or not 1 <= body['count'] <= 100):
+        abort(400)
+    log_event(recipient, kind, metadata={key: body[key] for key in fields[kind]},
+              details=request_details(request, app.config['COLLECT_REQUEST_DETAILS']))
+    return jsonify(saved=True)
 
 
 @app.post('/quiz')

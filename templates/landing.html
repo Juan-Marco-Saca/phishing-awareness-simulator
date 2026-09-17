@@ -45,9 +45,10 @@
         <p>Your password was not changed. The text you entered was cleared in your browser and was not sent to the server.</p>
         <p>The exercise records that you interacted with this page, along with timing and configured request details, to help evaluate awareness training.</p>
         <p>For a real password change, open your organization's account portal directly instead of following an unexpected email link.</p>
-        <a class="button" href="{{ url_for('training', token=token) }}">Continue to awareness training</a>
+        <a class="button" href="{{ url_for('start_training', token=token) }}">Continue to awareness training</a>
     </section>
 </main>
+{% if token %}<script src="{{ url_for('static', filename='learning.js') }}" data-token="{{ token }}" defer></script>{% endif %}
 <script>
 const startedAt = performance.now();
 const endpoint = {{ url_for('interaction', token=token) | tojson }};
@@ -58,7 +59,7 @@ let started = false;
 let pendingSubmission = null;
 function elapsed() { return Math.min(86400000, Math.max(0, Math.round(performance.now() - startedAt))); }
 async function send(payload) {
-    const response = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
+    const response = await (window.telemetryFetch ? (url, options) => window.telemetryFetch('interaction', url, options) : fetch)(endpoint, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
     if (!response.ok) throw new Error('Unable to record this interaction.');
 }
 for (const input of inputs) {

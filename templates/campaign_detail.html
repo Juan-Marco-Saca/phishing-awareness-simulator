@@ -5,6 +5,7 @@
 <title>{{ campaign.name }} · Participants</title>
 <style>
 *{box-sizing:border-box}body{margin:0;background:#f4f6f8;color:#243447;font:15px Arial,sans-serif;line-height:1.55}main{max-width:1200px;margin:30px auto;padding:28px;background:white;border-radius:12px}a{color:#1565c0}h1{font-size:30px;margin:16px 0 4px;overflow-wrap:anywhere}h2{font-size:21px}.muted{color:#607184;font-size:13px}.stats{display:flex;gap:14px;flex-wrap:wrap;margin:24px 0}.stat{flex:1;min-width:130px;border:1px solid #dae3ed;border-radius:8px;padding:16px}.stat strong{display:block;font-size:26px}.toolbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:24px 0}input{padding:12px;border:1px solid #adbed0;border-radius:6px;font:inherit;max-width:100%}button{padding:12px 18px;border:0;border-radius:6px;background:#1565c0;color:white;cursor:pointer}.person{border:1px solid #dbe4ed;border-radius:10px;margin:14px 0;overflow:hidden}.person>summary{padding:20px;cursor:pointer;background:#fafcfe}.email{font-size:17px;font-weight:bold;overflow-wrap:anywhere}.badges{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.badge{font-size:12px;padding:4px 9px;border-radius:4px;background:#eaf0f6;color:#52677e}.yes{background:#e3f3eb;color:#226647}.warning{color:#8d4600}.history{padding:20px}.event{border-left:3px solid #d3e2f5;padding:0 0 20px 18px;margin:0 0 12px}.event h3{font-size:15px;margin:0 0 4px}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px}summary:focus-visible,a:focus-visible,button:focus-visible,input:focus-visible{outline:3px solid #90b9ed;outline-offset:3px}[hidden]{display:none!important}@media(max-width:650px){main{margin:10px;padding:18px}h1{font-size:25px}.history{padding:14px}}
+.charts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:20px 0 32px}.chart{border:1px solid #dbe4ed;border-radius:10px;padding:22px;min-width:0}.chart h3{margin:0;font-size:17px}.bar-row{margin:14px 0}.bar-label{display:flex;justify-content:space-between;gap:12px;font-size:13px}.bar-track{height:13px;background:#edf2f7;border-radius:4px;margin-top:5px;overflow:hidden}.bar-fill{height:100%;background:#3376c5;border-radius:4px}.chart:nth-child(3) .bar-fill{background:#35856b}.chart:nth-child(4) .bar-fill{background:#7961ae}.chart:nth-child(5) .bar-fill{background:#b77d32}.chart-bars{max-height:360px;overflow-y:auto}.chart-empty{padding:20px;background:#f6f8fb;border-radius:6px;color:#607184}.chart table{width:100%;border-collapse:collapse;font-size:13px}.chart td,.chart th{text-align:left;padding:6px;border-bottom:1px solid #e1e8f0}@media(max-width:800px){.charts{grid-template-columns:1fr}}
 </style>
 </head>
 <body><main>
@@ -22,8 +23,21 @@
 <div class="stats">
 <div class="stat"><strong>{{ participants|length }}</strong>Participants</div>
 <div class="stat"><strong>{{ campaign.unique_clicks }}</strong>Visited the link</div>
-<div class="stat"><strong>{{ campaign.password_submitted }}</strong>Submitted the form</div>
+<div class="stat"><strong>{{ campaign.all_submitted }}</strong>Submitted an action</div>
 <div class="stat"><strong>{{ campaign.completed }}</strong>Completed training</div>
+</div>
+<h2>Campaign analytics</h2>
+<p class="muted">Delivery / bounce status: unavailable — no mail-provider feedback is connected. SMTP acceptance does not prove delivery.</p>
+<p class="muted">Charts use only this campaign's saved data. Refresh activity to load new results. Participant search below does not change these charts.</p>
+<div class="charts">
+{% for chart in charts %}<section class="chart" aria-labelledby="chart-{{ chart.key }}">
+<h3 id="chart-{{ chart.key }}">{{ chart.title }}</h3><p class="muted">{{ chart.note }}</p>
+{% if chart.has_data %}<div class="chart-bars" role="list" aria-label="{{ chart.title }}">
+{% for row in chart.rows %}<div class="bar-row" role="listitem"><div class="bar-label"><span>{{ row.label }}</span><strong>{{ row.value }}</strong></div><div class="bar-track" aria-hidden="true"><div class="bar-fill" style="width:{{ row.width }}%"></div></div></div>{% endfor %}
+</div><p class="muted">Bar scale: 0–{{ chart.scale }}</p>
+{% else %}<p class="chart-empty">No data for this chart yet.</p>{% endif %}
+<details><summary>View data table</summary><table><thead><tr><th scope="col">Category</th><th scope="col">Count</th></tr></thead><tbody>{% for row in chart.rows %}<tr><td>{{ row.label }}</td><td>{{ row.value }}</td></tr>{% else %}<tr><td colspan="2">No observations recorded.</td></tr>{% endfor %}</tbody></table></details>
+</section>{% endfor %}
 </div>
 <h2>Activity by participant</h2>
 <p class="muted">Click a participant to see their full history, IP and device details, form interactions, and quiz results. Activity is attributed to the recipient's link; forwarded links may be used by someone else.</p>
@@ -43,6 +57,23 @@
 <div class="muted">{{ p.events|length }} events · {{ 'Latest: ' + p.events[0].timestamp + ' UTC' if p.events else 'No activity recorded' }} · Expand history</div>
 </summary>
 <div class="history">
+<h3>Response and learning</h3>
+<p class="muted">Times below start at this recipient's SMTP acceptance. Missing or negative intervals are unavailable.</p>
+<ul>
+<li>Time to first click: {{ (p.learning.click_seconds|string + ' seconds') if p.learning.click_seconds is not none else 'Not available' }}</li>
+<li>Time to first report: {{ (p.learning.report_seconds|string + ' seconds') if p.learning.report_seconds is not none else 'Not available' }} · {{ p.learning.report_order }}</li>
+<li>Training: {{ p.learning.training_status }} · Training link {{ 'followed' if p.learning.training_link else 'not recorded' }}</li>
+<li>Quiz: first {{ (p.learning.first_score|string + '/5') if p.learning.first_score is not none else 'not available' }} → latest {{ (p.learning.latest_score|string + '/5') if p.learning.latest_score is not none else 'not available' }} · Score change: {{ p.learning.quiz_change if p.learning.quiz_change is not none else 'needs two attempts' }}</li>
+<li>Estimated active training time: {{ (p.learning.active_seconds|string + ' seconds') if p.learning.active_seconds is not none else 'Not recorded' }}</li>
+<li>Sections reached: {{ p.learning.section_names|join(', ') or 'None recorded' }}</li>
+<li>Recovered browser failure reports: {{ p.learning.tracking_failures }}</li>
+</ul>
+<p class="muted">Active time pauses for hidden/unfocused tabs or after 60 seconds without interaction. Section visibility does not prove reading. Timing is approximate; parallel tabs can overlap. Failures are reported on a best-effort basis after connectivity recovers; total outages may leave no browser record. Server/database failures remain in application logs.</p>
+{% if p.comparisons %}<details><summary>Compare this participant across campaigns</summary>
+<p class="muted">Matched by email address (case-insensitive). Campaign difficulty and audience may differ; these are observations, not a normalized risk score.</p>
+{% for previous in p.comparisons %}<p><a href="{{ url_for('campaign_detail', campaign_id=previous.id) }}">{{ previous.name }}</a>: Link {{ 'visited' if previous.metrics.clicked else 'not recorded as visited' }} · {{ 'Reported' if previous.metrics.reported else 'No report' }} · {{ previous.metrics.training_status }} · Latest quiz {{ previous.metrics.latest_score if previous.metrics.latest_score is not none else 'N/A' }}/5</p>{% endfor %}
+</details>{% endif %}
+<h3>Event history</h3>
 {% for e in p.events %}<article class="event">
 <h3>{{ e.label }}</h3><div class="muted">{{ e.timestamp }} UTC</div>
 {% if e.ip_address %}<div>IP: <strong>{{ e.ip_address }}</strong> · {{ e.browser or 'Unknown browser' }} / {{ e.os or 'Unknown OS' }} / {{ e.device or 'Unknown device' }}</div>{% endif %}

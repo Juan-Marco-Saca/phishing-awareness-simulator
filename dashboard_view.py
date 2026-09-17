@@ -2,6 +2,9 @@
 import json
 
 LABELS = {
+    'training_link_clicked': 'Training link followed', 'training_section_viewed': 'Training section reached',
+    'training_activity': 'Training active-time checkpoint', 'client_request_failed': 'Browser request failure reported',
+    'scenario_page_viewed': 'Service page viewed', 'scenario_action_submitted': 'Service action submitted',
     'email_send_attempted': 'Email sending started', 'email_accepted': 'Email accepted by mail server',
     'email_failed': 'Email could not be sent', 'email_opened': 'Email image loaded (estimated open)',
     'clicked_link': 'Campaign link visited', 'password_form_viewed': 'Password form viewed',
@@ -21,6 +24,14 @@ def dashboard_data(events, enabled):
         if not isinstance(metadata, dict):
             metadata = {}
         details = []
+        if 'active_seconds' in metadata:
+            details.append(f"Active time: {metadata['active_seconds']} seconds (session total)")
+        if 'section' in metadata:
+            details.append('Section: ' + metadata['section'].replace('_', ' '))
+        if 'operation' in metadata:
+            details.append(f"Failed {metadata['operation']} requests: {metadata.get('count', 1)} (client-reported)")
+        if metadata.get('scenario'):
+            details.append('Scenario: ' + metadata['scenario'].capitalize())
         if 'elapsed_ms' in metadata:
             details.append(f"{metadata['elapsed_ms'] / 1000:g} seconds after opening the page")
         for key, label in [('current_filled', 'Current password'), ('new_filled', 'New password'), ('confirmation_filled', 'Confirmation')]:

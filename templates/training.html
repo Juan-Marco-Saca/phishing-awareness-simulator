@@ -97,7 +97,7 @@
         <strong>Remember:</strong> Most successful cyberattacks begin with a phishing email.
     </div>
 
-    <h2>What is Phishing?</h2>
+    <h2 data-training-section="phishing">What is Phishing?</h2>
 
     <p>
         Phishing is a social engineering attack where attackers impersonate trusted people,
@@ -112,7 +112,7 @@
         <li>They often use urgency, fear, or curiosity.</li>
     </ul>
 
-    <h2>Common Warning Signs</h2>
+    <h2 data-training-section="warning_signs">Common Warning Signs</h2>
 
     <ul>
         <li>Unexpected emails asking for account action</li>
@@ -127,7 +127,7 @@
         <strong>Tip:</strong> Hover over links before clicking and verify requests through official channels.
     </div>
 
-    <h2>What Should You Do?</h2>
+    <h2 data-training-section="response">What Should You Do?</h2>
 
     <ul>
         <li>Slow down before clicking.</li>
@@ -139,7 +139,7 @@
 
     <div class="quiz">
 
-        <h2>Phishing Awareness Quiz</h2>
+        <h2 data-training-section="quiz">Phishing Awareness Quiz</h2>
 
         <form id="quizForm">
 
@@ -193,6 +193,7 @@
 
 </div>
 
+{% if token %}<script src="{{ url_for('static', filename='learning.js') }}" data-token="{{ token }}" defer></script>{% endif %}
 <script>
 async function gradeQuiz() {
     const button = document.querySelector('#quizForm button');
@@ -201,7 +202,7 @@ async function gradeQuiz() {
     button.disabled = true;
     resultBox.textContent = 'Checking your answers…';
     try {
-        const response = await fetch({{ url_for('quiz', token=token) | tojson }}, {
+        const response = await (window.telemetryFetch ? (url, options) => window.telemetryFetch('quiz', url, options) : fetch)({{ url_for('quiz', token=token) | tojson }}, {
             method: 'POST', headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(answers)
         });

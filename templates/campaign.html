@@ -130,7 +130,7 @@
 
             <p><strong>Subject:</strong> <span id="preview-subject"></span></p>
 
-            <div class="email-box" id="preview-body"></div>
+            <iframe id="preview-body" title="Actual email design preview" sandbox="allow-same-origin" style="width:100%;height:640px;border:1px solid #dce3ec;border-radius:8px"></iframe>
         </div>
 
         <label>Target Emails</label>
@@ -150,84 +150,12 @@
 </div>
 
 <script>
-    const templates = {
-        password: {
-            subject: "Action Required: Account Password Expiring Soon",
-            body: `Hello,
-
-Our system shows that your university account password is scheduled to expire soon.
-
-To avoid losing access to your email, Canvas, and campus systems, please review your account status using the link below:
-
-[Simulation Link]
-
-Thank you,
-IT Help Desk`
-        },
-
-        parking: {
-            subject: "Parking Permit Update Required",
-            body: `Hello,
-
-Our records show that your parking permit information may be incomplete for the current semester.
-
-Please review your parking account to avoid any issues with campus parking access:
-
-[Simulation Link]
-
-Thank you,
-Campus Parking Services`
-        },
-
-        package: {
-            subject: "Package Delivery Notice",
-            body: `Hello,
-
-A package delivery attempt was made, but additional confirmation is needed before the item can be released.
-
-Please review the delivery notice below:
-
-[Simulation Link]
-
-Thank you,
-Mail Services`
-        },
-
-        payroll: {
-            subject: "Direct Deposit Verification Needed",
-            body: `Hello,
-
-Your direct deposit information requires verification before the next processing period.
-
-Please review your employee account information here:
-
-[Simulation Link]
-
-Thank you,
-Human Resources`
-        },
-
-        storage: {
-            subject: "OneDrive Storage Limit Warning",
-            body: `Hello,
-
-Your OneDrive storage is close to reaching its limit. Some file syncing features may be interrupted if no action is taken.
-
-Please review your storage usage here:
-
-[Simulation Link]
-
-Thank you,
-Microsoft 365 Support`
-        }
-    };
-
+    const templates = {{ email_templates | tojson }};
     function updatePreview() {
-        const selected = document.getElementById("template").value;
-        document.getElementById("preview-subject").innerText = templates[selected].subject;
-        document.getElementById("preview-body").innerText = templates[selected].body;
+        const selected = document.getElementById('template').value;
+        document.getElementById('preview-subject').textContent = templates[selected].subject;
+        document.getElementById('preview-body').src = '/email-preview/' + encodeURIComponent(selected);
     }
-
     updatePreview();
 </script>
 
